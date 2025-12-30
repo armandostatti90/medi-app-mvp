@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:medi_rag_app/screens/home/home_screen.dart';
+import 'package:medi_rag_app/screens/main_navigation.dart';
 import 'screens/auth/login_screen.dart';
 import 'services/api_service.dart';
 
@@ -13,6 +15,7 @@ class MediRagApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'MEDI RAG',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
@@ -20,7 +23,7 @@ class MediRagApp extends StatelessWidget {
       home: const SplashScreen(), // ← Neu!
       routes: {
         '/login': (context) => LoginScreen(),
-        '/home': (context) => const HomeScreen(),
+        '/home': (context) => const MainNavigation(),
       },
     );
   }
@@ -85,19 +88,6 @@ class _SplashScreenState extends State<SplashScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-// Placeholder Home
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Home')),
-      body: const Center(child: Text('Dashboard kommt gleich! 🎉')),
     );
   }
 }
