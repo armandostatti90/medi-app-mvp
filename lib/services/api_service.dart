@@ -69,8 +69,29 @@ class ApiService {
     String? transplantDate,
     String? notes,
     bool? onboardingCompleted,
+    String? userType,
+    String? organType,
+    String? medicalNotes,
+    Map<String, dynamic>? customData, // ← NEU!
   }) async {
     final token = await getToken();
+
+    // Build data map
+    final data = <String, dynamic>{
+      if (transplantType != null) 'transplant_type': transplantType,
+      if (transplantDate != null) 'transplant_date': transplantDate,
+      if (notes != null) 'notes': notes,
+      if (onboardingCompleted != null)
+        'onboarding_completed': onboardingCompleted,
+      if (userType != null) 'user_type': userType,
+      if (organType != null) 'organ_type': organType,
+      if (medicalNotes != null) 'medical_notes': medicalNotes,
+    };
+
+    // Merge custom data if provided
+    if (customData != null) {
+      data.addAll(customData);
+    }
 
     final response = await http.patch(
       Uri.parse('$baseUrl/me/profile'),
@@ -78,13 +99,7 @@ class ApiService {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: json.encode({
-        if (transplantType != null) 'transplant_type': transplantType,
-        if (transplantDate != null) 'transplant_date': transplantDate,
-        if (notes != null) 'notes': notes,
-        if (onboardingCompleted != null)
-          'onboarding_completed': onboardingCompleted,
-      }),
+      body: json.encode(data),
     );
 
     if (response.statusCode != 200) {
@@ -95,23 +110,111 @@ class ApiService {
   Future<Map<String, dynamic>> getMe() async {
     final token = await getToken();
 
-    print(
-      '🔍 Token in getMe: ${token != null ? "vorhanden" : "NULL"}',
-    ); // DEBUG
-    print('🔍 URL: $baseUrl/me'); // DEBUG
-
     final response = await http.get(
       Uri.parse('$baseUrl/me'),
       headers: {'Authorization': 'Bearer $token'},
     );
 
-    print('🔍 Status: ${response.statusCode}'); // DEBUG
-    print('🔍 Body: ${response.body}'); // DEBUG
+    print('🔍 getMe Status: ${response.statusCode}'); // DEBUG
+    print('🔍 getMe Body: ${response.body}'); // DEBUG
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      print(
+        '🔍 onboarding_completed: ${data['onboarding_completed']}',
+      ); // DEBUG
+      return data;
+    } else {
+      throw Exception('Failed to get user data');
+    }
+  }
+
+  // Pet erstellen
+  Future<Map<String, dynamic>> createPet(String petType, String name) async {
+    final token = await getToken();
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/me/pet'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({'pet_type': petType, 'name': name}),
+    );
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
-      throw Exception('Failed: ${response.statusCode}');
+      throw Exception('Failed to create pet');
+    }
+  }
+
+  // Invite Code generieren
+  Future<Map<String, dynamic>> generateInviteCode({
+    required String accessLevel,
+    int daysValid = 7,
+  }) async {
+    final token = await getToken();
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/relationships/generate-code'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({'access_level': accessLevel, 'days_valid': daysValid}),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to generate code');
+    }
+  }
+
+  // Use invite code (for supporters/medical to link to patient)
+  Future<Map<String, dynamic>> useInviteCode(String code) async {
+    final token = await getToken();
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/relationships/use-code'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({'code': code}),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to use invite code');
+    }
+  }
+
+  // ============================================
+  // ONBOARDING
+  // ============================================
+
+  Future<bool> isOnboardingCompleted() async {
+    try {
+      final user = await getMe();
+      return user['onboarding_completed'] ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> completeOnboarding() async {
+    final token = await getToken();
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/me/complete-onboarding'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to complete onboarding');
     }
   }
 
@@ -176,6 +279,33 @@ class ApiService {
       return json.decode(response.body)['medications'];
     } else {
       throw Exception('Failed to get medications');
+    }
+  }
+
+  // ============================================
+  // MEDICATION
+  // ============================================
+
+  Future<Map<String, dynamic>> addMedication({
+    required String name,
+    required String dose,
+    required String frequency,
+  }) async {
+    final token = await getToken();
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/medications'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({'name': name, 'dose': dose, 'frequency': frequency}),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to add medication');
     }
   }
 }

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:medi_rag_app/widgets/app_drawer.dart';
 import 'home/home_screen.dart';
 import 'chat/chat_screen.dart';
-import 'medications/medications_screen.dart';
-import 'devices/devices_screen.dart';
-import '../widgets/app_drawer.dart';
+import 'therapy/therapy_screen.dart';
+import 'profile/profile_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -18,20 +18,32 @@ class _MainNavigationState extends State<MainNavigation> {
   final List<Widget> _screens = const [
     HomeScreen(),
     ChatScreen(),
-    MedicationsScreen(),
-    DevicesScreen(),
+    TherapyScreen(), // NEU!
+    ProfileScreen(), // NEU!
   ];
 
   @override
   Widget build(BuildContext context) {
-    final titles = ['Dashboard', 'Chat', 'Medikamente', 'Geräte'];
+    final titles = ['Heute', 'Chat', 'Therapie', 'Profil'];
 
     return Scaffold(
       appBar: AppBar(
         title: Text(titles[_currentIndex]),
-        automaticallyImplyLeading: false, // Hamburger Menu
+        automaticallyImplyLeading: false,
+        actions: [
+          // Drawer Icon nur bei Profil (Index 3)
+          if (_currentIndex == 3)
+            Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.settings),
+                onPressed: () => Scaffold.of(context).openEndDrawer(),
+              ),
+            ),
+        ],
       ),
-      endDrawer: const AppDrawer(),
+      endDrawer: _currentIndex == 3
+          ? const AppDrawer()
+          : null, // Nur bei Profil!
       body: _screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
@@ -44,11 +56,8 @@ class _MainNavigationState extends State<MainNavigation> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Heute'),
           BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.medication),
-            label: 'Medikamente',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.devices), label: 'Geräte'),
+          BottomNavigationBarItem(icon: Icon(Icons.healing), label: 'Therapie'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
         ],
       ),
     );

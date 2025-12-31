@@ -1,44 +1,50 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
-import 'onboarding_medication_reason_screen.dart';
-import 'onboarding_link_patient_screen.dart';
+import 'onboarding_medications_screen.dart';
 
-class OnboardingUserTypeScreen extends StatefulWidget {
-  const OnboardingUserTypeScreen({super.key});
+class OnboardingSupplementsReasonScreen extends StatefulWidget {
+  const OnboardingSupplementsReasonScreen({super.key});
 
   @override
-  State<OnboardingUserTypeScreen> createState() =>
-      _OnboardingUserTypeScreenState();
+  State<OnboardingSupplementsReasonScreen> createState() =>
+      _OnboardingSupplementsReasonScreenState();
 }
 
-class _OnboardingUserTypeScreenState extends State<OnboardingUserTypeScreen> {
+class _OnboardingSupplementsReasonScreenState
+    extends State<OnboardingSupplementsReasonScreen> {
   final _apiService = ApiService();
-  String? _selectedType;
+  String? _selectedReason;
   bool _isLoading = false;
 
-  final List<Map<String, dynamic>> _userTypes = [
+  final List<Map<String, dynamic>> _reasons = [
     {
-      'value': 'patient',
-      'title': 'Ich nehme Medikamente',
-      'subtitle': 'Selbstständige Medikamenteneinnahme',
-      'icon': Icons.medication,
+      'value': 'doctor_recommended',
+      'title': 'Vom Arzt empfohlen',
+      'subtitle': 'Auf ärztliche Verordnung',
+      'icon': Icons.medical_services,
     },
     {
-      'value': 'supporter',
-      'title': 'Ich unterstütze jemanden',
-      'subtitle': 'Familie, Freunde oder Bekannte',
-      'icon': Icons.people,
+      'value': 'deficiency',
+      'title': 'Mangel / Bluttest',
+      'subtitle': 'Nachgewiesener Nährstoffmangel',
+      'icon': Icons.bloodtype,
     },
     {
-      'value': 'medical',
-      'title': 'Medizinisches Personal',
-      'subtitle': 'Arzt, Pflege oder Apotheke',
-      'icon': Icons.local_hospital,
+      'value': 'prevention',
+      'title': 'Vorbeugung',
+      'subtitle': 'Präventive Einnahme',
+      'icon': Icons.shield,
+    },
+    {
+      'value': 'self_initiative',
+      'title': 'Eigeninitiative',
+      'subtitle': 'Persönliche Entscheidung',
+      'icon': Icons.person,
     },
   ];
 
   Future<void> _continue() async {
-    if (_selectedType == null) {
+    if (_selectedReason == null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Bitte wähle eine Option')));
@@ -48,27 +54,16 @@ class _OnboardingUserTypeScreenState extends State<OnboardingUserTypeScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Save basic user type
-      await _apiService.updateProfile(userType: _selectedType);
+      await _apiService.updateProfile(
+        customData: {'supplement_reason': _selectedReason},
+      );
 
-      // Navigate based on selection
-      if (_selectedType == 'patient') {
-        // Ask why they take meds
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const OnboardingMedicationReasonScreen(),
-          ),
-        );
-      } else {
-        // Supporter or Medical → Link to patient
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const OnboardingLinkPatientScreen(),
-          ),
-        );
-      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const OnboardingMedicationsScreen(),
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -81,29 +76,29 @@ class _OnboardingUserTypeScreenState extends State<OnboardingUserTypeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Willkommen')),
+      appBar: AppBar(title: const Text('Supplements')),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Wie nutzt du MEDI RAG?',
+              'Warum nimmst du Supplements?',
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              'Wähle die passende Option für dich',
+              'Hilft uns bei der Beratung',
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
             const SizedBox(height: 32),
 
             Expanded(
               child: ListView.builder(
-                itemCount: _userTypes.length,
+                itemCount: _reasons.length,
                 itemBuilder: (context, index) {
-                  final type = _userTypes[index];
-                  final isSelected = _selectedType == type['value'];
+                  final reason = _reasons[index];
+                  final isSelected = _selectedReason == reason['value'];
 
                   return Card(
                     elevation: isSelected ? 4 : 1,
@@ -112,12 +107,12 @@ class _OnboardingUserTypeScreenState extends State<OnboardingUserTypeScreen> {
                     child: ListTile(
                       contentPadding: const EdgeInsets.all(16),
                       leading: Icon(
-                        type['icon'],
+                        reason['icon'],
                         size: 40,
                         color: isSelected ? Colors.blue : Colors.grey,
                       ),
                       title: Text(
-                        type['title'],
+                        reason['title'],
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: isSelected
@@ -125,13 +120,13 @@ class _OnboardingUserTypeScreenState extends State<OnboardingUserTypeScreen> {
                               : FontWeight.normal,
                         ),
                       ),
-                      subtitle: Text(type['subtitle']),
+                      subtitle: Text(reason['subtitle']),
                       trailing: isSelected
                           ? const Icon(Icons.check_circle, color: Colors.blue)
                           : null,
                       onTap: () {
                         setState(() {
-                          _selectedType = type['value'];
+                          _selectedReason = reason['value'];
                         });
                       },
                     ),

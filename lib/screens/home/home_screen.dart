@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:medi_rag_app/widgets/onboarding_banner.dart';
 import '../../services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -13,6 +14,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<dynamic> _medications = [];
   bool _isLoading = true;
+  bool _isOnboardingCompleted = false; // ← NEU!
 
   @override
   void initState() {
@@ -20,14 +22,22 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadData();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadData(); // Reload when coming back
+  }
+
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
 
     try {
       final meds = await _apiService.getMedications();
+      final completed = await _apiService.isOnboardingCompleted(); // ← NEU!
 
       setState(() {
         _medications = meds;
+        _isOnboardingCompleted = completed; // ← NEU!
         _isLoading = false;
       });
     } catch (e) {
@@ -46,54 +56,10 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(16.0),
               children: [
                 // Onboarding Banner
-                Card(
-                  color: Colors.blue.shade50,
-                  child: InkWell(
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Onboarding Modal kommt bald!'),
-                        ),
-                      );
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.person_outline,
-                            color: Colors.blue,
-                            size: 32,
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text(
-                                  'Profil vervollständigen',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Für personalisierte Empfehlungen und bessere Unterstützung',
-                                  style: TextStyle(fontSize: 14),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(Icons.arrow_forward, color: Colors.blue),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+                if (!_isOnboardingCompleted) const OnboardingBanner(),
 
-                const SizedBox(height: 24),
-
+                if (!_isOnboardingCompleted) // ← NEU!
+                  const SizedBox(height: 24),
                 // Medications
                 const Text(
                   'Medikamente',

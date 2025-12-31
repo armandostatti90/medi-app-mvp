@@ -1,44 +1,46 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
-import 'onboarding_medication_reason_screen.dart';
-import 'onboarding_link_patient_screen.dart';
+import 'onboarding_medical_info_screen.dart';
+import 'onboarding_pet_screen.dart';
+import 'onboarding_supplements_reason_screen.dart';
 
-class OnboardingUserTypeScreen extends StatefulWidget {
-  const OnboardingUserTypeScreen({super.key});
+class OnboardingMedicationReasonScreen extends StatefulWidget {
+  const OnboardingMedicationReasonScreen({super.key});
 
   @override
-  State<OnboardingUserTypeScreen> createState() =>
-      _OnboardingUserTypeScreenState();
+  State<OnboardingMedicationReasonScreen> createState() =>
+      _OnboardingMedicationReasonScreenState();
 }
 
-class _OnboardingUserTypeScreenState extends State<OnboardingUserTypeScreen> {
+class _OnboardingMedicationReasonScreenState
+    extends State<OnboardingMedicationReasonScreen> {
   final _apiService = ApiService();
-  String? _selectedType;
+  String? _selectedReason;
   bool _isLoading = false;
 
-  final List<Map<String, dynamic>> _userTypes = [
+  final List<Map<String, dynamic>> _reasons = [
     {
-      'value': 'patient',
-      'title': 'Ich nehme Medikamente',
-      'subtitle': 'Selbstständige Medikamenteneinnahme',
-      'icon': Icons.medication,
+      'value': 'chronic',
+      'title': 'Chronisch krank / Dauertherapie',
+      'subtitle': 'Langfristige medizinische Behandlung',
+      'icon': Icons.healing,
     },
     {
-      'value': 'supporter',
-      'title': 'Ich unterstütze jemanden',
-      'subtitle': 'Familie, Freunde oder Bekannte',
-      'icon': Icons.people,
+      'value': 'care_dependent',
+      'title': 'Pflegebedürftig',
+      'subtitle': 'Benötige Unterstützung bei der Einnahme',
+      'icon': Icons.accessibility_new,
     },
     {
-      'value': 'medical',
-      'title': 'Medizinisches Personal',
-      'subtitle': 'Arzt, Pflege oder Apotheke',
-      'icon': Icons.local_hospital,
+      'value': 'supplements',
+      'title': 'Supplements / Vitamine',
+      'subtitle': 'Nahrungsergänzungsmittel',
+      'icon': Icons.energy_savings_leaf,
     },
   ];
 
   Future<void> _continue() async {
-    if (_selectedType == null) {
+    if (_selectedReason == null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Bitte wähle eine Option')));
@@ -48,24 +50,24 @@ class _OnboardingUserTypeScreenState extends State<OnboardingUserTypeScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Save basic user type
-      await _apiService.updateProfile(userType: _selectedType);
+      await _apiService.updateProfile(
+        customData: {'medication_reason': _selectedReason},
+      );
 
-      // Navigate based on selection
-      if (_selectedType == 'patient') {
-        // Ask why they take meds
+      if (_selectedReason == 'chronic' || _selectedReason == 'care_dependent') {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const OnboardingMedicationReasonScreen(),
+            builder: (context) =>
+                OnboardingMedicalInfoScreen(reason: _selectedReason!),
           ),
         );
       } else {
-        // Supporter or Medical → Link to patient
+        // Supplements → ask why
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const OnboardingLinkPatientScreen(),
+            builder: (context) => const OnboardingSupplementsReasonScreen(),
           ),
         );
       }
@@ -81,29 +83,29 @@ class _OnboardingUserTypeScreenState extends State<OnboardingUserTypeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Willkommen')),
+      appBar: AppBar(title: const Text('Deine Medikamente')),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Wie nutzt du MEDI RAG?',
+              'Warum nimmst du Medikamente?',
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              'Wähle die passende Option für dich',
+              'Hilft uns, dich optimal zu unterstützen',
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
             const SizedBox(height: 32),
 
             Expanded(
               child: ListView.builder(
-                itemCount: _userTypes.length,
+                itemCount: _reasons.length,
                 itemBuilder: (context, index) {
-                  final type = _userTypes[index];
-                  final isSelected = _selectedType == type['value'];
+                  final reason = _reasons[index];
+                  final isSelected = _selectedReason == reason['value'];
 
                   return Card(
                     elevation: isSelected ? 4 : 1,
@@ -112,12 +114,12 @@ class _OnboardingUserTypeScreenState extends State<OnboardingUserTypeScreen> {
                     child: ListTile(
                       contentPadding: const EdgeInsets.all(16),
                       leading: Icon(
-                        type['icon'],
+                        reason['icon'],
                         size: 40,
                         color: isSelected ? Colors.blue : Colors.grey,
                       ),
                       title: Text(
-                        type['title'],
+                        reason['title'],
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: isSelected
@@ -125,13 +127,13 @@ class _OnboardingUserTypeScreenState extends State<OnboardingUserTypeScreen> {
                               : FontWeight.normal,
                         ),
                       ),
-                      subtitle: Text(type['subtitle']),
+                      subtitle: Text(reason['subtitle']),
                       trailing: isSelected
                           ? const Icon(Icons.check_circle, color: Colors.blue)
                           : null,
                       onTap: () {
                         setState(() {
-                          _selectedType = type['value'];
+                          _selectedReason = reason['value'];
                         });
                       },
                     ),

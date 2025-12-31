@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:medi_rag_app/widgets/locked_screen_overlay.dart';
-import 'package:medi_rag_app/widgets/onboarding_banner.dart';
 import '../../services/api_service.dart';
+import '../../widgets/locked_screen_overlay.dart';
+import '../../widgets/onboarding_banner.dart';
 
-class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+class TherapyScreen extends StatefulWidget {
+  const TherapyScreen({super.key});
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  State<TherapyScreen> createState() => _TherapyScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _TherapyScreenState extends State<TherapyScreen> {
   final _apiService = ApiService();
   bool _isOnboardingCompleted = false;
   bool _isLoading = true;
@@ -21,12 +21,37 @@ class _ChatScreenState extends State<ChatScreen> {
     _checkOnboarding();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkOnboarding(); // Reload when coming back
+  }
+
   Future<void> _checkOnboarding() async {
     final completed = await _apiService.isOnboardingCompleted();
     setState(() {
       _isOnboardingCompleted = completed;
       _isLoading = false;
     });
+  }
+
+  Widget _buildContent() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Content hier (wird transparent wenn locked)
+        const Text('Adhärenz Charts'),
+        const SizedBox(height: 100),
+        Container(
+          height: 200,
+          color: Colors.grey[300],
+          child: const Center(child: Text('Chart Placeholder')),
+        ),
+        const SizedBox(height: 20),
+        const Text('Medikamente'),
+        // ... more content
+      ],
+    );
   }
 
   @override
