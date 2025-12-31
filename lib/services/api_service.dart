@@ -126,6 +126,22 @@ class ApiService {
     }
   }
 
+  // Get full profile
+  Future<Map<String, dynamic>> getFullProfile() async {
+    final token = await getToken();
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/me/full'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to get profile');
+    }
+  }
+
   // Pet erstellen
   Future<Map<String, dynamic>> createPet(String petType, String name) async {
     final token = await getToken();
@@ -189,6 +205,20 @@ class ApiService {
     }
   }
 
+  // Delete account
+  Future<void> deleteAccount() async {
+    final token = await getToken();
+
+    final response = await http.delete(
+      Uri.parse('$baseUrl/me/account'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete account');
+    }
+  }
+
   // ============================================
   // ONBOARDING
   // ============================================
@@ -223,7 +253,9 @@ class ApiService {
     final token = await getToken();
 
     final response = await http.get(
-      Uri.parse('$baseUrl/me/stats'),
+      Uri.parse(
+        '$baseUrl/gamification/stats',
+      ), // ← Von /me/stats zu /gamification/stats
       headers: {'Authorization': 'Bearer $token'},
     );
 
@@ -298,6 +330,22 @@ class ApiService {
     }
   }
 
+  // Get ALL medications (including paused)
+  Future<List<dynamic>> getAllMedications() async {
+    final token = await getToken();
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/medications/all'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body)['medications'];
+    } else {
+      throw Exception('Failed to get all medications');
+    }
+  }
+
   // Add Medication with Composition (multi-select with quantities)
   Future<Map<String, dynamic>> addMedicationWithComposition({
     required String name,
@@ -336,6 +384,93 @@ class ApiService {
     }
   }
 
+  // Update Medication
+  Future<Map<String, dynamic>> updateMedication({
+    required int medicationId,
+    required String name,
+    required String dose,
+    required String frequency,
+    required List<String> times,
+  }) async {
+    final token = await getToken();
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/medications/$medicationId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        'name': name,
+        'dose': dose,
+        'frequency': frequency,
+        'times': times,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to update medication');
+    }
+  }
+
+  // Delete Medication
+  Future<void> deleteMedication(int medicationId) async {
+    final token = await getToken();
+
+    final response = await http.delete(
+      Uri.parse('$baseUrl/medications/$medicationId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete medication');
+    }
+  }
+
+  // Toggle Medication (Pause/Resume)
+  Future<Map<String, dynamic>> toggleMedication(int medicationId) async {
+    final token = await getToken();
+
+    final response = await http.patch(
+      Uri.parse('$baseUrl/medications/$medicationId/toggle'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to toggle medication');
+    }
+  }
+
+  // Mark medication as taken
+  Future<Map<String, dynamic>> markMedicationTaken({
+    required int medicationId,
+    required String scheduledTime,
+  }) async {
+    final token = await getToken();
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/medications/mark-taken'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        'medication_id': medicationId,
+        'scheduled_time': scheduledTime,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to mark as taken: ${response.body}');
+    }
+  }
+
   // Get today's medication schedule
   Future<Map<String, dynamic>> getTodaySchedule() async {
     final token = await getToken();
@@ -349,6 +484,62 @@ class ApiService {
       return json.decode(response.body);
     } else {
       throw Exception('Failed to get today schedule');
+    }
+  }
+
+  // Get calendar month
+  Future<Map<String, dynamic>> getCalendarMonth(String month) async {
+    final token = await getToken();
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/medications/calendar?month=$month'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to get calendar');
+    }
+  }
+
+  // Get schedule for specific date
+  Future<Map<String, dynamic>> getScheduleForDate(String date) async {
+    final token = await getToken();
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/medications/schedule?date=$date'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to get schedule');
+    }
+  }
+
+  // ============================================
+  // CHAT
+  // ============================================
+
+  // Send chat message
+  Future<Map<String, dynamic>> sendChatMessage(String message) async {
+    final token = await getToken();
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/chat'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({'message': message}),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to send message: ${response.body}');
     }
   }
 }
