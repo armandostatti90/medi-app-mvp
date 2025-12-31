@@ -115,9 +115,6 @@ class ApiService {
       headers: {'Authorization': 'Bearer $token'},
     );
 
-    print('🔍 getMe Status: ${response.statusCode}'); // DEBUG
-    print('🔍 getMe Body: ${response.body}'); // DEBUG
-
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       print(
@@ -286,12 +283,39 @@ class ApiService {
   // MEDICATION
   // ============================================
 
-  Future<Map<String, dynamic>> addMedication({
+  // Search medication database
+  Future<List<dynamic>> searchMedications(String query) async {
+    if (query.length < 2) return [];
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/medications/database/search?q=$query'),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body)['results'];
+    } else {
+      throw Exception('Failed to search medications');
+    }
+  }
+
+  // Add Medication with Composition (multi-select with quantities)
+  Future<Map<String, dynamic>> addMedicationWithComposition({
     required String name,
-    required String dose,
-    required String frequency,
+    required String targetDose,
+    required List<Map<String, dynamic>> composition,
+    required List<String> times,
   }) async {
     final token = await getToken();
+
+    final body = {
+      'name': name,
+      'dose': targetDose,
+      'frequency': '${times.length}x täglich',
+      'times': times,
+      'composition': composition,
+    };
+
+    print('🔍 Sending medication: $body'); // DEBUG
 
     final response = await http.post(
       Uri.parse('$baseUrl/medications'),
@@ -299,13 +323,32 @@ class ApiService {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
-      body: json.encode({'name': name, 'dose': dose, 'frequency': frequency}),
+      body: json.encode(body),
+    );
+
+    print('🔍 Status: ${response.statusCode}'); // DEBUG
+    print('🔍 Response: ${response.body}'); // DEBUG
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to add medication: ${response.body}');
+    }
+  }
+
+  // Get today's medication schedule
+  Future<Map<String, dynamic>> getTodaySchedule() async {
+    final token = await getToken();
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/medications/today-schedule'),
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
-      throw Exception('Failed to add medication');
+      throw Exception('Failed to get today schedule');
     }
   }
 }

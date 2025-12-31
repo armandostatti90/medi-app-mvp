@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../../widgets/add_medication_modal.dart';
 import 'onboarding_pet_screen.dart';
 
 class OnboardingMedicationsScreen extends StatefulWidget {
@@ -13,56 +14,36 @@ class OnboardingMedicationsScreen extends StatefulWidget {
 class _OnboardingMedicationsScreenState
     extends State<OnboardingMedicationsScreen> {
   final _apiService = ApiService();
-  final List<Map<String, dynamic>> _medications = [];
+  List<Map<String, dynamic>> _medications = [];
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMedications();
+  }
+
+  Future<void> _loadMedications() async {
+    try {
+      final meds = await _apiService.getMedications();
+      setState(() {
+        _medications = meds.cast<Map<String, dynamic>>();
+      });
+    } catch (e) {
+      print('Error loading medications: $e');
+    }
+  }
 
   void _addMedication() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => _AddMedicationSheet(
-        onAdd: (medication) {
-          setState(() {
-            _medications.add(medication);
-          });
-        },
-      ),
+      backgroundColor: Colors.transparent,
+      builder: (context) => AddMedicationModal(onAdded: _loadMedications),
     );
   }
 
-  void _removeMedication(int index) {
-    setState(() {
-      _medications.removeAt(index);
-    });
-  }
-
   Future<void> _continue() async {
-    setState(() => _isLoading = true);
-
-    try {
-      // Save all medications
-      for (var med in _medications) {
-        await _apiService.addMedication(
-          name: med['name'],
-          dose: med['dose'],
-          frequency: med['frequency'],
-        );
-      }
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const OnboardingPetScreen()),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Fehler: $e')));
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _skip() async {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const OnboardingPetScreen()),
@@ -124,10 +105,6 @@ class _OnboardingMedicationsScreenState
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         subtitle: Text('${med['dose']} - ${med['frequency']}'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _removeMedication(index),
-                        ),
                       ),
                     );
                   },
@@ -171,7 +148,7 @@ class _OnboardingMedicationsScreenState
             if (_medications.isNotEmpty) ...[
               const SizedBox(height: 8),
               TextButton(
-                onPressed: _skip,
+                onPressed: _continue,
                 child: const Text('Später weitere hinzufügen'),
               ),
             ],
@@ -179,153 +156,5 @@ class _OnboardingMedicationsScreenState
         ),
       ),
     );
-  }
-}
-
-// Add Medication Bottom Sheet
-class _AddMedicationSheet extends StatefulWidget {
-  final Function(Map<String, dynamic>) onAdd;
-
-  const _AddMedicationSheet({required this.onAdd});
-
-  @override
-  State<_AddMedicationSheet> createState() => _AddMedicationSheetState();
-}
-
-class _AddMedicationSheetState extends State<_AddMedicationSheet> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _doseController = TextEditingController();
-  String _frequency = '1x täglich';
-
-  final List<String> _frequencies = [
-    '1x täglich',
-    '2x täglich',
-    '3x täglich',
-    'Bei Bedarf',
-    'Wöchentlich',
-  ];
-
-  void _save() {
-    if (_formKey.currentState!.validate()) {
-      widget.onAdd({
-        'name': _nameController.text.trim(),
-        'dose': _doseController.text.trim(),
-        'frequency': _frequency,
-      });
-      Navigator.pop(context);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 24,
-        right: 24,
-        top: 24,
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Medikament hinzufügen',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 24),
-
-            // Name
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                hintText: 'z.B. Aspirin',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.medication),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Bitte Name eingeben';
-                }
-                return null;
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Dose
-            TextFormField(
-              controller: _doseController,
-              decoration: const InputDecoration(
-                labelText: 'Dosierung',
-                hintText: 'z.B. 100mg',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.scale),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Bitte Dosierung eingeben';
-                }
-                return null;
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Frequency
-            DropdownButtonFormField<String>(
-              value: _frequency,
-              decoration: const InputDecoration(
-                labelText: 'Häufigkeit',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.schedule),
-              ),
-              items: _frequencies.map((freq) {
-                return DropdownMenuItem(value: freq, child: Text(freq));
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _frequency = value!;
-                });
-              },
-            ),
-
-            const SizedBox(height: 24),
-
-            // Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Abbrechen'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _save,
-                    child: const Text('Hinzufügen'),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _doseController.dispose();
-    super.dispose();
   }
 }
