@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../widgets/add_medication_modal.dart';
 import '../../widgets/edit_medication_modal.dart';
+import '../../services/medication_notification_helper.dart';
+import 'medication_history_screen.dart';
 
 class MedicationListScreen extends StatefulWidget {
   const MedicationListScreen({super.key});
@@ -88,6 +90,9 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
   ) async {
     try {
       await _apiService.toggleMedication(id);
+
+      // Reschedule all notifications
+      await MedicationNotificationHelper.rescheduleAll();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -196,7 +201,23 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Meine Medikamente')),
+      appBar: AppBar(
+        title: const Text('Meine Medikamente'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Historie',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MedicationHistoryScreen(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _medications.isEmpty

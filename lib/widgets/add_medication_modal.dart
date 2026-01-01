@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:medi_rag_app/services/notification_service.dart';
 import '../services/api_service.dart';
+import '../services/medication_notification_helper.dart';
 
 class AddMedicationModal extends StatefulWidget {
   final Function() onAdded;
@@ -125,6 +127,8 @@ class _AddMedicationModalState extends State<AddMedicationModal> {
         composition: composition,
         times: _times,
       );
+
+      await MedicationNotificationHelper.rescheduleAll();
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

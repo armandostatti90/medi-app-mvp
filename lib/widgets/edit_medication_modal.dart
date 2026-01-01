@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:medi_rag_app/services/notification_service.dart';
 import '../services/api_service.dart';
+import '../services/medication_notification_helper.dart';
 
 class EditMedicationModal extends StatefulWidget {
   final Map<String, dynamic> medication;
@@ -75,6 +77,8 @@ class _EditMedicationModalState extends State<EditMedicationModal> {
         frequency: '${_times.length}x täglich',
         times: _times,
       );
+
+      await MedicationNotificationHelper.rescheduleAll();
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

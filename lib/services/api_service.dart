@@ -1,9 +1,20 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:io' show Platform;
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8000';
+  // Auto-detect: Real device (iOS/Android) → Render, else → localhost
+  static String get baseUrl {
+    if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
+      return 'https://medi-rag-mvp.onrender.com';
+    }
+    return 'http://localhost:8000';
+  }
+
+  static const Duration timeout = Duration(seconds: 30);
+
   final storage = const FlutterSecureStorage();
 
   // ============================================
@@ -517,6 +528,22 @@ class ApiService {
     } else {
       throw Exception('Failed to get schedule');
     }
+  }
+
+  Future<List<dynamic>> getMedicationHistory() async {
+    final token = await getToken();
+    final response = await http
+        .get(
+          Uri.parse('$baseUrl/medications/history'),
+          headers: {'Authorization': 'Bearer $token'},
+        )
+        .timeout(timeout);
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['medications'] as List;
+    }
+    throw Exception('Failed to load history');
   }
 
   // ============================================

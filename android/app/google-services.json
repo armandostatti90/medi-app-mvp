@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "230954575372",
+    "project_id": "medi-rag",
+    "storage_bucket": "medi-rag.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:230954575372:android:527a020e76af7164563029",
+        "android_client_info": {
+          "package_name": "com.example.medi_rag_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGExURQuE8tMi_7PVRmUOR_ZdL1SiodQ4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

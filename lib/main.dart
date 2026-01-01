@@ -3,8 +3,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/main_navigation.dart';
 import 'services/api_service.dart';
+import 'services/notification_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await NotificationService.init();
+
   runApp(const MediRagApp());
 }
 
