@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../../widgets/locked_screen_overlay.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -14,13 +15,40 @@ class _ChatScreenState extends State<ChatScreen> {
   final _scrollController = ScrollController();
 
   List<Map<String, dynamic>> _messages = [];
-  bool _isLoading = false;
+  bool _isLoading = true;
   bool _isSending = false;
+  bool _isOnboardingCompleted = false;
 
   @override
   void initState() {
     super.initState();
-    _addWelcomeMessage();
+    _checkOnboardingAndLoad();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkOnboardingAndLoad();
+  }
+
+  Future<void> _checkOnboardingAndLoad() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final completed = await _apiService.isOnboardingCompleted();
+
+      setState(() {
+        _isOnboardingCompleted = completed;
+        _isLoading = false;
+      });
+
+      if (completed) {
+        _addWelcomeMessage();
+      }
+    } catch (e) {
+      print('Error checking onboarding: $e');
+      setState(() => _isLoading = false);
+    }
   }
 
   void _addWelcomeMessage() {
@@ -38,7 +66,6 @@ class _ChatScreenState extends State<ChatScreen> {
     final message = _messageController.text.trim();
     if (message.isEmpty) return;
 
-    // Add user message
     setState(() {
       _messages.add({
         'text': message,
@@ -54,7 +81,6 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       final response = await _apiService.sendChatMessage(message);
 
-      // Add assistant response
       setState(() {
         _messages.add({
           'text': response['answer'],
@@ -123,7 +149,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 fontSize: 15,
               ),
             ),
-
             if (sources != null && sources.isNotEmpty) ...[
               const SizedBox(height: 8),
               const Divider(height: 1),
@@ -155,10 +180,21 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (!_isOnboardingCompleted) {
+      return LockedScreenOverlay(child: _buildContent());
+    }
+
+    return _buildContent();
+  }
+
+  Widget _buildContent() {
     return Scaffold(
       body: Column(
         children: [
-          // Messages List
           Expanded(
             child: _messages.isEmpty
                 ? Center(
@@ -187,7 +223,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     itemCount: _messages.length + (_isSending ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == _messages.length && _isSending) {
-                        // Typing indicator
                         return Align(
                           alignment: Alignment.centerLeft,
                           child: Container(
@@ -223,8 +258,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     },
                   ),
           ),
-
-          // Input Field
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(

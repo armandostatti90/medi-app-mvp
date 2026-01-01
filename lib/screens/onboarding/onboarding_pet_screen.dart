@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import 'onboarding_invite_screen.dart';
-import 'onboarding_invite_screen.dart';
 
 class OnboardingPetScreen extends StatefulWidget {
   const OnboardingPetScreen({super.key});

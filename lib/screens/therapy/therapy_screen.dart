@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../../widgets/locked_screen_overlay.dart';
 import 'medication_list_screen.dart';
 
 class TherapyScreen extends StatefulWidget {
@@ -20,7 +21,7 @@ class _TherapyScreenState extends State<TherapyScreen> {
 
   bool _isLoading = true;
   bool _isOnboardingCompleted = false;
-  bool _showFullCalendar = false; // ← Kalender aufklappen!
+  bool _showFullCalendar = false;
 
   @override
   void initState() {
@@ -264,7 +265,6 @@ class _TherapyScreenState extends State<TherapyScreen> {
           ),
         ),
 
-        // Calendar toggle button
         TextButton.icon(
           onPressed: () {
             setState(() {
@@ -296,7 +296,6 @@ class _TherapyScreenState extends State<TherapyScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Month Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -320,7 +319,6 @@ class _TherapyScreenState extends State<TherapyScreen> {
 
             const SizedBox(height: 12),
 
-            // Weekday Headers
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
@@ -344,7 +342,6 @@ class _TherapyScreenState extends State<TherapyScreen> {
 
             const SizedBox(height: 8),
 
-            // Calendar Grid
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -365,7 +362,7 @@ class _TherapyScreenState extends State<TherapyScreen> {
                   onTap: () {
                     _loadDaySchedule(date);
                     setState(() {
-                      _showFullCalendar = false; // Close after selection
+                      _showFullCalendar = false;
                     });
                   },
                   child: Container(
@@ -609,9 +606,13 @@ class _TherapyScreenState extends State<TherapyScreen> {
     }
 
     if (!_isOnboardingCompleted) {
-      return const Center(child: Text('Onboarding nicht abgeschlossen'));
+      return LockedScreenOverlay(child: _buildContentScaffold());
     }
 
+    return _buildContentScaffold();
+  }
+
+  Widget _buildContentScaffold() {
     return Scaffold(
       body: _buildContent(),
       floatingActionButton: FloatingActionButton.extended(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../widgets/next_intake_card.dart';
+import '../../widgets/locked_screen_overlay.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,11 +16,39 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? _schedule;
   Map<String, dynamic>? _stats;
   bool _isLoading = true;
+  bool _isOnboardingCompleted = false;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _checkOnboardingAndLoad();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkOnboardingAndLoad();
+  }
+
+  Future<void> _checkOnboardingAndLoad() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final completed = await _apiService.isOnboardingCompleted();
+
+      setState(() {
+        _isOnboardingCompleted = completed;
+      });
+
+      if (completed) {
+        await _loadData();
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      print('Error checking onboarding: $e');
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _loadData() async {
@@ -28,7 +57,6 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final schedule = await _apiService.getTodaySchedule();
       final stats = await _apiService.getStats();
-      // TODO: Load stats from API
 
       setState(() {
         _schedule = schedule;
@@ -75,6 +103,14 @@ class _HomeScreenState extends State<HomeScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
+    if (!_isOnboardingCompleted) {
+      return LockedScreenOverlay(child: _buildContent());
+    }
+
+    return _buildContent();
+  }
+
+  Widget _buildContent() {
     final nextIntake = _schedule?['next_intake'] as Map<String, dynamic>?;
     final tomorrowIntake =
         _schedule?['tomorrow_first_intake'] as Map<String, dynamic>?;
@@ -88,7 +124,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome
             Text(
               'Hallo! 👋',
               style: Theme.of(
@@ -105,7 +140,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SizedBox(height: 24),
 
-            // Next Intake Card
             NextIntakeCard(
               nextIntake: nextIntake,
               tomorrowFirstIntake: tomorrowIntake,
@@ -115,7 +149,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SizedBox(height: 24),
 
-            // Quick Stats
             const Text(
               'Deine Statistiken',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -129,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icons.local_fire_department,
                     iconColor: Colors.orange,
                     label: 'Streak',
-                    value: '${_stats?['streak'] ?? 0} Tage', // TODO: From API
+                    value: '${_stats?['streak'] ?? 0} Tage',
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -138,8 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icons.trending_up,
                     iconColor: Colors.green,
                     label: 'Adhärenz',
-                    value:
-                        '${_stats?['adherence_this_week'] ?? 0}%', // TODO: From API
+                    value: '${_stats?['adherence_this_week'] ?? 0}%',
                   ),
                 ),
               ],
@@ -154,8 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icons.medication,
                     iconColor: Colors.blue,
                     label: 'Genommen',
-                    value:
-                        '${_stats?['total_medications_taken'] ?? 0}', // TODO: From API
+                    value: '${_stats?['total_medications_taken'] ?? 0}',
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -164,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icons.star,
                     iconColor: Colors.amber,
                     label: 'Level',
-                    value: '${_stats?['level'] ?? 1}', // TODO: From API
+                    value: '${_stats?['level'] ?? 1}',
                   ),
                 ),
               ],
@@ -172,7 +203,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SizedBox(height: 24),
 
-            // Quick Actions
             const Text(
               'Schnellzugriff',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -184,7 +214,6 @@ class _HomeScreenState extends State<HomeScreen> {
               title: 'Therapieplan',
               subtitle: 'Heutiger Medikationsplan',
               onTap: () {
-                // Navigate to therapy tab
                 DefaultTabController.of(context).animateTo(1);
               },
             ),
@@ -196,7 +225,6 @@ class _HomeScreenState extends State<HomeScreen> {
               title: 'Chat',
               subtitle: 'Fragen zu deiner Therapie',
               onTap: () {
-                // Navigate to chat tab
                 DefaultTabController.of(context).animateTo(2);
               },
             ),

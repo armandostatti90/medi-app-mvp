@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import 'onboarding_medical_info_screen.dart';
-import 'onboarding_pet_screen.dart';
 import 'onboarding_supplements_reason_screen.dart';
 
 class OnboardingMedicationReasonScreen extends StatefulWidget {
