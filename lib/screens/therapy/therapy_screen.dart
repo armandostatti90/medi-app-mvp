@@ -43,14 +43,15 @@ class _TherapyScreenState extends State<TherapyScreen> {
 
       setState(() {
         _isOnboardingCompleted = completed;
+        _isLoading = false; // Stop loading immediately after onboarding check
       });
 
       if (completed) {
+        // Only load data if onboarding is completed
+        setState(() => _isLoading = true);
         await _loadCalendar();
         final today = DateTime.now();
         await _loadDaySchedule(today.toIso8601String().split('T')[0]);
-        setState(() => _isLoading = false);
-      } else {
         setState(() => _isLoading = false);
       }
     } catch (e) {
@@ -448,10 +449,6 @@ class _TherapyScreenState extends State<TherapyScreen> {
   }
 
   Widget _buildDaySchedule() {
-    if (_selectedDaySchedule == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     final schedule = _selectedDaySchedule!['schedule'] as List? ?? [];
     final date = _selectedDaySchedule!['date'];
     final isToday = _selectedDaySchedule!['is_today'] ?? false;
@@ -591,7 +588,8 @@ class _TherapyScreenState extends State<TherapyScreen> {
           children: [
             _buildHorizontalDatePicker(),
             _buildFullCalendar(),
-            _buildDaySchedule(),
+            // Only show schedule if data is loaded
+            if (_selectedDaySchedule != null) _buildDaySchedule(),
             const SizedBox(height: 80),
           ],
         ),
@@ -601,7 +599,8 @@ class _TherapyScreenState extends State<TherapyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    // Only show loading if onboarding is completed
+    if (_isLoading && _isOnboardingCompleted) {
       return const Center(child: CircularProgressIndicator());
     }
 

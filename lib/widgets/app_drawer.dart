@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:medi_rag_app/screens/auth/login_screen.dart';
 import '../services/api_service.dart';
 import '../screens/profile/profile_edit_screen.dart';
 import '../screens/settings/notifications_screen.dart';
@@ -59,10 +60,18 @@ class _AppDrawerState extends State<AppDrawer> {
 
     if (confirm == true) {
       await _apiService.logout();
+
+      // Pop the drawer first
+      Navigator.of(context).pop();
+
+      // Small delay to let drawer close
+      await Future.delayed(const Duration(milliseconds: 100));
+
       if (mounted) {
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil('/login', (route) => false);
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+          (route) => false,
+        );
       }
     }
   }
@@ -236,10 +245,7 @@ class _AppDrawerState extends State<AppDrawer> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                _logout();
-              },
+              onPressed: _logout, // ← HIER!
               icon: const Icon(Icons.logout, color: Colors.red),
               label: const Text(
                 'Abmelden',
